@@ -42,6 +42,13 @@ $ pnpm run start
 $ pnpm run start:dev
 ```
 
+## Seeding the database
+```bash
+$ pnpm run prisma:migrate:reset
+$ pnpm run prisma:migrate:deploy
+$ pnpm run prisma:seed
+```
+
 ## Routes
 
 The application runs on `http://localhost:3000/`.
