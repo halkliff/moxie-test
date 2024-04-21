@@ -1,0 +1,113 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model MedSpaAddress {
+  id                 String    @id @default(cuid())
+  addressLine1       String    @map("address_line_1")
+  addressLine2       String?   @map("address_line_2")
+  addressLine3       String?   @map("address_line_3")
+  addressLine4       String?   @map("address_line_4")
+  number             String?   @map("address_number")
+  sublocality        String?   @map("sublocality")
+  locality           String?   @map("locality")
+  administrativeArea String?   @map("administrative_area")
+  postalCode         String    @map("postal_code")
+  regionCode         String    @map("region_code")
+  medspaId           Int       @map("medspa_id")
+  medSpa             MedSpa    @relation(name: "medspa_address", fields: [medspaId], references: [id])
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+  deletedAt          DateTime?
+
+  @@map("medspa_address")
+}
+
+model MedSpaContact {
+  id          String    @id @default(cuid())
+  // One of PHONE_NUMBER, EMAIL, validated at application level
+  contactType String    @map("contact_type")
+  value       String    @map("contact_value")
+  medSpaId    Int       @map("medspa_id")
+  medSpa      MedSpa    @relation("medspa_contact", fields: [medSpaId], references: [id])
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  @@unique([medSpaId, contactType, value])
+  @@map("medspa_contact")
+}
+
+model MedSpa {
+  id        Int             @id @default(autoincrement())
+  name      String          @map("name")
+  addresses MedSpaAddress[] @relation(name: "medspa_address")
+  contacts  MedSpaContact[] @relation(name: "medspa_contact")
+
+  services     MedSpaService[]     @relation(name: "medspa_service")
+  appointments MedSpaAppointment[] @relation(name: "medspa_appointment")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  @@map("medspa")
+}
+
+model MedSpaAppointment {
+  id        Int                          @id @default(autoincrement())
+  medSpaId  Int                          @map("medspa_id")
+  medSpa    MedSpa                       @relation(name: "medspa_appointment", fields: [medSpaId], references: [id])
+  services  MedSpaAppointmentOnService[] @relation(name: "medspa_service_on_appointment")
+  startTime DateTime                     @map("start_time")
+  totalDuration Int                      @map("total_duration")
+  totalPrice Float                       @map("total_price")
+  // One of SCHEDULED, COMPLETED, CANCELED
+  status    String                       @map("status")
+  createdAt DateTime                     @default(now()) @map("created_at")
+  updatedAt DateTime                     @updatedAt @map("updated_at")
+  deletedAt DateTime?
+
+  @@map("medspa_appointment")
+}
+
+model MedSpaService {
+  id           Int                          @id @default(autoincrement())
+  name         String                       @map("name")
+  description  String?                      @map("description")
+  price        Float                        @map("price")
+  duration     Int                          @map("duration")
+  medSpaId     Int                          @map("medspa_id")
+  medSpa       MedSpa                       @relation(name: "medspa_service", fields: [medSpaId], references: [id])
+  appointments MedSpaAppointmentOnService[] @relation(name: "medspa_appointment_on_service")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  @@map("medspa_service")
+}
+
+model MedSpaAppointmentOnService {
+  medSpaServiceId     Int
+  medSpaService       MedSpaService     @relation(name: "medspa_appointment_on_service", fields: [medSpaServiceId], references: [id])
+  medSpaAppointmentId Int
+  medSpaAppointment   MedSpaAppointment @relation(name: "medspa_service_on_appointment", fields: [medSpaAppointmentId], references: [id])
+  createdAt           DateTime          @default(now()) @map("created_at")
+  updatedAt           DateTime          @updatedAt @map("updated_at")
+  deletedAt           DateTime?         @map("deleted_at")
+
+  @@id([medSpaServiceId, medSpaAppointmentId])
+  @@map("medspa_appointment_on_service")
+}
